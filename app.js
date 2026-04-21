@@ -2,11 +2,6 @@ const state = {
   image: null,
   template: "threads",
   asciiText: "請先上傳圖片。",
-  cropDrag: {
-    active: false,
-    imageRect: null,
-    cropRect: null,
-  },
 };
 
 const refs = {
@@ -19,9 +14,10 @@ const refs = {
   contrastInput: document.getElementById("contrastInput"),
   mosaicInput: document.getElementById("mosaicInput"),
   edgeInput: document.getElementById("edgeInput"),
-  zoomInput: document.getElementById("zoomInput"),
-  offsetXInput: document.getElementById("offsetXInput"),
-  offsetYInput: document.getElementById("offsetYInput"),
+  insetLeftInput: document.getElementById("insetLeftInput"),
+  insetRightInput: document.getElementById("insetRightInput"),
+  insetTopInput: document.getElementById("insetTopInput"),
+  insetBottomInput: document.getElementById("insetBottomInput"),
   renderBtn: document.getElementById("renderBtn"),
   copyBtn: document.getElementById("copyBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
@@ -63,36 +59,30 @@ function getSettings() {
     contrast: Number(refs.contrastInput.value) || 1,
     mosaicBlock: Number(refs.mosaicInput.value) || 4,
     edgeThreshold: Number(refs.edgeInput.value) || 30,
-    zoom: Number(refs.zoomInput.value) || 1,
-    offsetX: Number(refs.offsetXInput.value) || 0,
-    offsetY: Number(refs.offsetYInput.value) || 0,
+    insetLeft: Number(refs.insetLeftInput.value) || 0,
+    insetRight: Number(refs.insetRightInput.value) || 0,
+    insetTop: Number(refs.insetTopInput.value) || 0,
+    insetBottom: Number(refs.insetBottomInput.value) || 0,
   };
 }
 
-function computeCropBox(imgWidth, imgHeight, columns, rows, zoom, offsetX, offsetY) {
-  const charAspect = 0.5;
-  const targetAspect = columns / (rows * charAspect);
-  const imageAspect = imgWidth / imgHeight;
+function computeCropBox(imgWidth, imgHeight, insetLeft, insetRight, insetTop, insetBottom) {
+  const left = WordArtistEngine.clamp(insetLeft, 0, 45);
+  const right = WordArtistEngine.clamp(insetRight, 0, 45);
+  const top = WordArtistEngine.clamp(insetTop, 0, 45);
+  const bottom = WordArtistEngine.clamp(insetBottom, 0, 45);
 
-  let cropWidth = imgWidth;
-  let cropHeight = imgHeight;
+  const cropX = (imgWidth * left) / 100;
+  const cropY = (imgHeight * top) / 100;
+  const cropW = Math.max(2, imgWidth * (1 - (left + right) / 100));
+  const cropH = Math.max(2, imgHeight * (1 - (top + bottom) / 100));
 
-  if (imageAspect > targetAspect) {
-    cropWidth = imgHeight * targetAspect;
-  } else {
-    cropHeight = imgWidth / targetAspect;
-  }
-
-  cropWidth /= zoom;
-  cropHeight /= zoom;
-
-  const maxX = Math.max(0, imgWidth - cropWidth);
-  const maxY = Math.max(0, imgHeight - cropHeight);
-
-  const x = ((offsetX + 100) / 200) * maxX;
-  const y = ((offsetY + 100) / 200) * maxY;
-
-  return { x, y, cropWidth, cropHeight };
+  return {
+    x: WordArtistEngine.clamp(cropX, 0, imgWidth - 2),
+    y: WordArtistEngine.clamp(cropY, 0, imgHeight - 2),
+    cropWidth: WordArtistEngine.clamp(cropW, 2, imgWidth),
+    cropHeight: WordArtistEngine.clamp(cropH, 2, imgHeight),
+  };
 }
 
 function drawCropPreview() {
@@ -105,7 +95,7 @@ function drawCropPreview() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#a5b1c2";
     ctx.font = "14px sans-serif";
-    ctx.fillText("上傳圖片後可拖曳裁切框", 16, canvas.height / 2);
+    ctx.fillText("上傳圖片後可調整四邊內縮", 18, canvas.height / 2);
     return;
   }
 
@@ -122,11 +112,10 @@ function drawCropPreview() {
   const crop = computeCropBox(
     img.width,
     img.height,
-    settings.columns,
-    settings.rows,
-    settings.zoom,
-    settings.offsetX,
-    settings.offsetY
+    settings.insetLeft,
+    settings.insetRight,
+    settings.insetTop,
+    settings.insetBottom
   );
 
   const cropPx = {
@@ -142,32 +131,6 @@ function drawCropPreview() {
   ctx.strokeStyle = "#4da2ff";
   ctx.lineWidth = 2;
   ctx.strokeRect(cropPx.x, cropPx.y, cropPx.w, cropPx.h);
-
-  state.cropDrag.imageRect = { x: dx, y: dy, w: drawW, h: drawH, scale };
-  state.cropDrag.cropRect = cropPx;
-}
-
-function updateOffsetFromCanvasPoint(px, py) {
-  const rect = state.cropDrag.imageRect;
-  const cropRect = state.cropDrag.cropRect;
-  if (!rect || !cropRect || !state.image) return;
-
-  const centerX = WordArtistEngine.clamp(px, rect.x + cropRect.w / 2, rect.x + rect.w - cropRect.w / 2);
-  const centerY = WordArtistEngine.clamp(py, rect.y + cropRect.h / 2, rect.y + rect.h - cropRect.h / 2);
-
-  const maxX = rect.w - cropRect.w;
-  const maxY = rect.h - cropRect.h;
-
-  const cropX = maxX <= 0 ? 0 : centerX - cropRect.w / 2 - rect.x;
-  const cropY = maxY <= 0 ? 0 : centerY - cropRect.h / 2 - rect.y;
-
-  const offsetX = maxX <= 0 ? 0 : (cropX / maxX) * 200 - 100;
-  const offsetY = maxY <= 0 ? 0 : (cropY / maxY) * 200 - 100;
-
-  refs.offsetXInput.value = offsetX.toFixed(0);
-  refs.offsetYInput.value = offsetY.toFixed(0);
-
-  imageToAscii();
 }
 
 function imageToAscii() {
@@ -185,11 +148,10 @@ function imageToAscii() {
   const crop = computeCropBox(
     state.image.width,
     state.image.height,
-    settings.columns,
-    settings.rows,
-    settings.zoom,
-    settings.offsetX,
-    settings.offsetY
+    settings.insetLeft,
+    settings.insetRight,
+    settings.insetTop,
+    settings.insetBottom
   );
 
   srcCtx.drawImage(
@@ -291,36 +253,12 @@ refs.downloadPngBtn.addEventListener("click", exportSocialPng);
   refs.contrastInput,
   refs.mosaicInput,
   refs.edgeInput,
-  refs.zoomInput,
-  refs.offsetXInput,
-  refs.offsetYInput,
+  refs.insetLeftInput,
+  refs.insetRightInput,
+  refs.insetTopInput,
+  refs.insetBottomInput,
 ].forEach((input) => {
   input.addEventListener("change", imageToAscii);
-});
-
-refs.cropPreviewCanvas.addEventListener("mousedown", (event) => {
-  if (!state.cropDrag.cropRect) return;
-  const rect = refs.cropPreviewCanvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  const c = state.cropDrag.cropRect;
-  if (x >= c.x && x <= c.x + c.w && y >= c.y && y <= c.y + c.h) {
-    state.cropDrag.active = true;
-    refs.cropPreviewCanvas.classList.add("dragging");
-  }
-});
-
-window.addEventListener("mouseup", () => {
-  state.cropDrag.active = false;
-  refs.cropPreviewCanvas.classList.remove("dragging");
-});
-
-refs.cropPreviewCanvas.addEventListener("mousemove", (event) => {
-  if (!state.cropDrag.active) return;
-  const rect = refs.cropPreviewCanvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  updateOffsetFromCanvasPoint(x, y);
 });
 
 refs.copyBtn.addEventListener("click", async () => {

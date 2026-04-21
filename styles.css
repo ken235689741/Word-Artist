@@ -104,12 +104,8 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #0c1015;
-  cursor: grab;
 }
 
-.crop-preview.dragging {
-  cursor: grabbing;
-}
 
 button {
   cursor: pointer;

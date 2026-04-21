@@ -68,21 +68,25 @@
 
         <h3>裁切 / 位置</h3>
         <label class="field">
-          <span>裁切框預覽（可拖曳）</span>
+          <span>裁切框預覽</span>
           <canvas id="cropPreviewCanvas" class="crop-preview" width="320" height="220"></canvas>
         </label>
 
         <label class="field">
-          <span>縮放（Zoom）</span>
-          <input id="zoomInput" type="range" min="1" max="3" step="0.1" value="1" />
+          <span>左側內縮（%）</span>
+          <input id="insetLeftInput" type="range" min="0" max="45" step="1" value="0" />
         </label>
         <label class="field">
-          <span>X 位移（-100 ~ 100）</span>
-          <input id="offsetXInput" type="range" min="-100" max="100" step="1" value="0" />
+          <span>右側內縮（%）</span>
+          <input id="insetRightInput" type="range" min="0" max="45" step="1" value="0" />
         </label>
         <label class="field">
-          <span>Y 位移（-100 ~ 100）</span>
-          <input id="offsetYInput" type="range" min="-100" max="100" step="1" value="0" />
+          <span>上側內縮（%）</span>
+          <input id="insetTopInput" type="range" min="0" max="45" step="1" value="0" />
+        </label>
+        <label class="field">
+          <span>下側內縮（%）</span>
+          <input id="insetBottomInput" type="range" min="0" max="45" step="1" value="0" />
         </label>
 
         <div class="actions">

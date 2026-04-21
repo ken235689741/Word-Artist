@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Artist MVP</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Word Artist MVP</h1>
+      <p>上傳圖片，轉成文字與符號，並切換社群留言版面預覽。</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel controls">
+        <h2>設定</h2>
+
+        <label class="field">
+          <span>上傳圖片</span>
+          <input id="imageInput" type="file" accept="image/*" />
+        </label>
+
+        <div class="row">
+          <label class="field">
+            <span>字幅 (columns)</span>
+            <input id="columnsInput" type="number" min="20" max="220" value="80" />
+          </label>
+          <label class="field">
+            <span>行數 (rows)</span>
+            <input id="rowsInput" type="number" min="10" max="160" value="60" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>風格</span>
+          <select id="styleInput">
+            <option value="realistic">寫實（Realistic）</option>
+            <option value="mosaic">馬賽克（Mosaic）</option>
+            <option value="line">線稿（Line Art）</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>字元集</span>
+          <input id="charsetInput" type="text" value="@%#*+=-:. " />
+        </label>
+
+        <label class="field">
+          <span>對比（寫實）</span>
+          <input id="contrastInput" type="range" min="0.5" max="2" step="0.1" value="1" />
+        </label>
+
+        <label class="field">
+          <span>區塊大小（馬賽克）</span>
+          <input id="mosaicInput" type="range" min="1" max="12" step="1" value="4" />
+        </label>
+
+        <label class="field">
+          <span>線條閾值（線稿）</span>
+          <input id="edgeInput" type="range" min="5" max="80" step="1" value="30" />
+        </label>
+
+        <div class="actions">
+          <button id="renderBtn" type="button">重新生成</button>
+          <button id="copyBtn" type="button">複製文字</button>
+          <button id="downloadBtn" type="button">下載 TXT</button>
+        </div>
+      </section>
+
+      <section class="panel preview-panel">
+        <h2>文字預覽</h2>
+        <pre id="asciiOutput" class="ascii-output"></pre>
+      </section>
+
+      <section class="panel social-panel">
+        <h2>社群版面預覽</h2>
+        <div class="tabs">
+          <button class="tab active" data-template="threads">Threads</button>
+          <button class="tab" data-template="fb">Facebook</button>
+          <button class="tab" data-template="ig">Instagram</button>
+        </div>
+
+        <div id="socialCard" class="social-card threads">
+          <div class="social-head">
+            <strong id="socialTitle">Threads 留言樣式</strong>
+            <span class="meta">@wordartist • 現在</span>
+          </div>
+          <pre id="socialOutput" class="social-output"></pre>
+        </div>
+      </section>
+    </main>
+
+    <canvas id="sourceCanvas" class="hidden"></canvas>
+    <script src="engine.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

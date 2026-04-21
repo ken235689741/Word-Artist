@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { convertRgbaToAscii, applyMosaic } = require('../engine.js');
+const {
+  convertRgbaToAscii,
+  applyMosaic,
+  getCharsetForStyle,
+  STYLE_CHARSETS,
+} = require('../engine.js');
 
 function grayPixel(v) {
   return [v, v, v, 255];
@@ -19,7 +24,8 @@ test('realistic mode outputs expected dimensions', () => {
     columns: 2,
     rows: 2,
     style: 'realistic',
-    charset: '#.',
+    customCharset: '#.',
+    useStyleCharset: false,
     contrast: 1,
   });
 
@@ -41,7 +47,7 @@ test('mosaic mode smooths values within block', () => {
   assert.equal(result[2], result[3]);
 });
 
-test('line mode highlights edges', () => {
+test('line mode highlights edges and uses directional chars', () => {
   const pixels = new Uint8ClampedArray([
     ...grayPixel(0),
     ...grayPixel(255),
@@ -54,11 +60,15 @@ test('line mode highlights edges', () => {
     columns: 2,
     rows: 2,
     style: 'line',
-    charset: '#.',
     edgeThreshold: 20,
   });
 
-  assert.match(output, /#/);
+  assert.match(output, /[┃━╱╲]/);
+});
+
+test('style charset can be auto selected', () => {
+  assert.equal(getCharsetForStyle('mosaic', '@#', true), STYLE_CHARSETS.mosaic);
+  assert.equal(getCharsetForStyle('realistic', '@#', false), '@#');
 });
 
 test('rejects invalid charset', () => {
@@ -69,7 +79,8 @@ test('rejects invalid charset', () => {
         data: pixels,
         columns: 1,
         rows: 1,
-        charset: '*',
+        customCharset: '*',
+        useStyleCharset: false,
       }),
     /at least 2/
   );

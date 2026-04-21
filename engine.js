@@ -1,4 +1,10 @@
 (function initEngine(globalScope) {
+  const STYLE_CHARSETS = {
+    realistic: "@%#*+=-:. ",
+    mosaic: "█▓▒░■□▪▫· ",
+    line: "█┃━╱╲┼┄· ",
+  };
+
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
@@ -9,6 +15,13 @@
 
   function rgbaToGray(r, g, b) {
     return 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  function getCharsetForStyle(style, customCharset, useStyleCharset) {
+    if (useStyleCharset) {
+      return STYLE_CHARSETS[style] || STYLE_CHARSETS.realistic;
+    }
+    return customCharset || STYLE_CHARSETS.realistic;
   }
 
   function buildGrayMapFromRGBA(data, columns, rows, contrast) {
@@ -46,23 +59,51 @@
     return result;
   }
 
+  function lineCharByDirection(dx, dy) {
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+    if (adx > ady * 1.5) {
+      return "━";
+    }
+    if (ady > adx * 1.5) {
+      return "┃";
+    }
+    return dx * dy > 0 ? "╲" : "╱";
+  }
+
+  function shadeChar(gray) {
+    if (gray < 90) return "▓";
+    if (gray < 150) return "▒";
+    if (gray < 210) return "░";
+    return " ";
+  }
+
   function toAscii(grayMap, columns, rows, style, charset, edgeThreshold) {
     const lines = [];
     for (let y = 0; y < rows; y += 1) {
       let line = "";
       for (let x = 0; x < columns; x += 1) {
         const i = y * columns + x;
-        let value = grayMap[i];
+        const center = grayMap[i];
 
         if (style === "line") {
-          const center = grayMap[i];
+          const left = grayMap[y * columns + clamp(x - 1, 0, columns - 1)];
           const right = grayMap[y * columns + clamp(x + 1, 0, columns - 1)];
+          const up = grayMap[clamp(y - 1, 0, rows - 1) * columns + x];
           const down = grayMap[clamp(y + 1, 0, rows - 1) * columns + x];
-          const gradient = Math.abs(center - right) + Math.abs(center - down);
-          value = gradient > edgeThreshold ? 30 : 230;
+          const dx = right - left;
+          const dy = down - up;
+          const gradient = Math.abs(dx) + Math.abs(dy);
+
+          if (gradient > edgeThreshold) {
+            line += lineCharByDirection(dx, dy);
+          } else {
+            line += shadeChar(center);
+          }
+          continue;
         }
 
-        const normalized = 1 - value / 255;
+        const normalized = 1 - center / 255;
         const idx = clamp(Math.floor(normalized * (charset.length - 1)), 0, charset.length - 1);
         line += charset[idx];
       }
@@ -77,11 +118,14 @@
       columns,
       rows,
       style = "realistic",
-      charset = "@%#*+=-:. ",
+      customCharset = STYLE_CHARSETS.realistic,
+      useStyleCharset = true,
       contrast = 1,
       mosaicBlock = 4,
       edgeThreshold = 30,
     } = params;
+
+    const charset = getCharsetForStyle(style, customCharset, useStyleCharset);
 
     if (!charset || charset.length < 2) {
       throw new Error("charset must include at least 2 characters");
@@ -94,9 +138,11 @@
   }
 
   const api = {
+    STYLE_CHARSETS,
     clamp,
     applyContrast,
     rgbaToGray,
+    getCharsetForStyle,
     buildGrayMapFromRGBA,
     applyMosaic,
     toAscii,

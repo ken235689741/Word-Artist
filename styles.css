@@ -61,6 +61,21 @@ h2 {
   margin-bottom: 10px;
 }
 
+.inline-field {
+  flex-direction: row;
+  align-items: center;
+}
+
+.inline-field input {
+  width: auto;
+}
+
+h3 {
+  margin: 10px 0 8px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;

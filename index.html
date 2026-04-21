@@ -41,8 +41,13 @@
           </select>
         </label>
 
+        <label class="field inline-field">
+          <input id="styleCharsetInput" type="checkbox" checked />
+          <span>依風格自動套用字元集</span>
+        </label>
+
         <label class="field">
-          <span>字元集</span>
+          <span>自訂字元集（關閉上項時生效）</span>
           <input id="charsetInput" type="text" value="@%#*+=-:. " />
         </label>
 
@@ -59,6 +64,20 @@
         <label class="field">
           <span>線條閾值（線稿）</span>
           <input id="edgeInput" type="range" min="5" max="80" step="1" value="30" />
+        </label>
+
+        <h3>裁切 / 位置</h3>
+        <label class="field">
+          <span>縮放（Zoom）</span>
+          <input id="zoomInput" type="range" min="1" max="3" step="0.1" value="1" />
+        </label>
+        <label class="field">
+          <span>X 位移（-100 ~ 100）</span>
+          <input id="offsetXInput" type="range" min="-100" max="100" step="1" value="0" />
+        </label>
+        <label class="field">
+          <span>Y 位移（-100 ~ 100）</span>
+          <input id="offsetYInput" type="range" min="-100" max="100" step="1" value="0" />
         </label>
 
         <div class="actions">

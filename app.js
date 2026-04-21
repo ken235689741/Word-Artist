@@ -9,10 +9,14 @@ const refs = {
   columnsInput: document.getElementById("columnsInput"),
   rowsInput: document.getElementById("rowsInput"),
   styleInput: document.getElementById("styleInput"),
+  styleCharsetInput: document.getElementById("styleCharsetInput"),
   charsetInput: document.getElementById("charsetInput"),
   contrastInput: document.getElementById("contrastInput"),
   mosaicInput: document.getElementById("mosaicInput"),
   edgeInput: document.getElementById("edgeInput"),
+  zoomInput: document.getElementById("zoomInput"),
+  offsetXInput: document.getElementById("offsetXInput"),
+  offsetYInput: document.getElementById("offsetYInput"),
   renderBtn: document.getElementById("renderBtn"),
   copyBtn: document.getElementById("copyBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
@@ -41,11 +45,41 @@ function getSettings() {
     columns: WordArtistEngine.clamp(Number(refs.columnsInput.value) || 80, 20, 220),
     rows: WordArtistEngine.clamp(Number(refs.rowsInput.value) || 60, 10, 160),
     style: refs.styleInput.value,
-    charset: refs.charsetInput.value || "@%#*+=-:. ",
+    useStyleCharset: refs.styleCharsetInput.checked,
+    customCharset: refs.charsetInput.value || WordArtistEngine.STYLE_CHARSETS.realistic,
     contrast: Number(refs.contrastInput.value) || 1,
     mosaicBlock: Number(refs.mosaicInput.value) || 4,
     edgeThreshold: Number(refs.edgeInput.value) || 30,
+    zoom: Number(refs.zoomInput.value) || 1,
+    offsetX: Number(refs.offsetXInput.value) || 0,
+    offsetY: Number(refs.offsetYInput.value) || 0,
   };
+}
+
+function computeCropBox(imgWidth, imgHeight, columns, rows, zoom, offsetX, offsetY) {
+  const charAspect = 0.5;
+  const targetAspect = columns / (rows * charAspect);
+  const imageAspect = imgWidth / imgHeight;
+
+  let cropWidth = imgWidth;
+  let cropHeight = imgHeight;
+
+  if (imageAspect > targetAspect) {
+    cropWidth = imgHeight * targetAspect;
+  } else {
+    cropHeight = imgWidth / targetAspect;
+  }
+
+  cropWidth /= zoom;
+  cropHeight /= zoom;
+
+  const maxX = Math.max(0, imgWidth - cropWidth);
+  const maxY = Math.max(0, imgHeight - cropHeight);
+
+  const x = ((offsetX + 100) / 200) * maxX;
+  const y = ((offsetY + 100) / 200) * maxY;
+
+  return { x, y, cropWidth, cropHeight };
 }
 
 function imageToAscii() {
@@ -55,11 +89,31 @@ function imageToAscii() {
   }
 
   const settings = getSettings();
-
   const srcCtx = refs.sourceCanvas.getContext("2d", { willReadFrequently: true });
   refs.sourceCanvas.width = settings.columns;
   refs.sourceCanvas.height = settings.rows;
-  srcCtx.drawImage(state.image, 0, 0, settings.columns, settings.rows);
+
+  const crop = computeCropBox(
+    state.image.width,
+    state.image.height,
+    settings.columns,
+    settings.rows,
+    settings.zoom,
+    settings.offsetX,
+    settings.offsetY
+  );
+
+  srcCtx.drawImage(
+    state.image,
+    crop.x,
+    crop.y,
+    crop.cropWidth,
+    crop.cropHeight,
+    0,
+    0,
+    settings.columns,
+    settings.rows
+  );
 
   const imageData = srcCtx.getImageData(0, 0, settings.columns, settings.rows);
 
@@ -103,10 +157,14 @@ refs.renderBtn.addEventListener("click", imageToAscii);
   refs.columnsInput,
   refs.rowsInput,
   refs.styleInput,
+  refs.styleCharsetInput,
   refs.charsetInput,
   refs.contrastInput,
   refs.mosaicInput,
   refs.edgeInput,
+  refs.zoomInput,
+  refs.offsetXInput,
+  refs.offsetYInput,
 ].forEach((input) => {
   input.addEventListener("change", imageToAscii);
 });
